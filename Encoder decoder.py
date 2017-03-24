@@ -47,8 +47,8 @@ class encoderRNN():
 
 
 if __name__ == "__main__":
-    eng_model = w2v.load('data set/english.bin')
-    fr_model = w2v.load('data set/french.bin')
+    eng_model = w2v.load('datasets/english.bin')
+    fr_model = w2v.load('datasets/french.bin')
     eng_training_sentence = 'Resumption of the session\n'.rstrip()
     Encoder = encoderRNN(eng_model,10)
     Encoder.train(eng_training_sentence)
