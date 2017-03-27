@@ -1,6 +1,7 @@
 import numpy as np 
 import pandas as pd
 import word2vec as w2v
+import decoder as decoder
 
 def tanh(x):
     return np.tanh(x)
@@ -38,11 +39,12 @@ class encoderRNN():
         return output[0]
 
 
-    def train(self,data):
+    def train(self,data, Decoder):
         context_vector = []
         for i in data.split(" "):
             word_vec = self.model[i]
             context_vector.append(self.RNN(word_vec))
+        # context_grad = Decoder.train()
         print(context_vector)
 
 
@@ -51,7 +53,8 @@ if __name__ == "__main__":
     fr_model = w2v.load('datasets/french.bin')
     eng_training_sentence = 'Resumption of the session\n'.rstrip()
     Encoder = encoderRNN(eng_model,10)
-    Encoder.train(eng_training_sentence)
+    Decoder = decoder.RNNClassifier()
+    Encoder.train(eng_training_sentence,Decoder)
 
 
     
