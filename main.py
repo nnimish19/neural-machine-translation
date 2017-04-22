@@ -33,11 +33,6 @@ def trainScript(en_sentences,fr_sentences, en_model,fr_model):
         fr_arr = fr_sentences[i]
         X = sentenceToVector(en_model, en_arr)  #[ [1,2,3], [4,7,1] ]
         Y = sentenceToVector(fr_model, fr_arr)
-        # make X and Y to have same #words
-        if X.shape[0]<Y.shape[0]:
-            Y = Y[:X.shape[0]]
-        else:
-            X = X[:Y.shape[0]]
 
         # print "count: ",i
         pred_vector, error = Encoder.train(X, Decoder, Y)
@@ -46,19 +41,20 @@ def trainScript(en_sentences,fr_sentences, en_model,fr_model):
 
     plot_graph(loopcount, loss_axis)
 
-if __name__ == "__main__":
-    f= open("datasets/en_sample.txt","r")
+def testScript(line, fr_model):     #source line, target vector model
+    X = [l.split(" ") for l in line]
+    print vectorToSentence(fr_model, Encoder.predict(X, Decoder))
+
+
+def parse_file(file):
+    f= open(file,"r")
     text = f.read()
     lines = text.split("\n")
-    en_sentences = [l.split(" ") for l in lines]
+    sentences = [l.split(" ") for l in lines]
     f.close()
+    return sentences
 
-    f = open("datasets/fr_sample.txt", "r")
-    text = f.read()
-    lines = text.split("\n")
-    fr_sentences = [l.split(" ") for l in lines]
-    f.close()
-
+def prepare_model(en_sentences,fr_sentences):
     # model = w2v([["line","one"], ["This", "is", "line", "two"]], size=2, window=2, min_count=1, workers=1)
     en_model = w2v(en_sentences, size=5, window=5, min_count=1, workers=4)
     fr_model = w2v(fr_sentences, size=5, window=5, min_count=1, workers=4)
@@ -67,5 +63,15 @@ if __name__ == "__main__":
     # en_model = w2v.load('datasets/english.bin')
     # fr_model = w2v.load('datasets/french.bin')
 
+def main():
+    en_file = "datasets/en_sample.txt"
+    fr_file = "datasets/fr_sample.txt"
+    en_sentences = parse_file(en_file)
+    fr_sentences = parse_file(fr_file)
+    en_model, fr_model = prepare_model(en_sentences,fr_sentences)
+
     # trainScript([en_sentences[0]], [fr_sentences[0]], en_model, fr_model)
     trainScript(en_sentences, fr_sentences, en_model, fr_model)
+    testScript("This is test line in english!")
+
+main()
