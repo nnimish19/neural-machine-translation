@@ -29,9 +29,9 @@ def trainScript(en_sentences,fr_sentences, en_model,fr_model):
     loopcount = len(en_sentences)
     loss_axis = []
     for i in xrange(loopcount):
-        en_arr = en_sentences[i]
+        en_arr = en_sentences[i]                #["line","one"]
         fr_arr = fr_sentences[i]
-        X = sentenceToVector(en_model, en_arr)
+        X = sentenceToVector(en_model, en_arr)  #[ [1,2,3], [4,7,1] ]
         Y = sentenceToVector(fr_model, fr_arr)
         # make X and Y to have same #words
         if X.shape[0]<Y.shape[0]:
@@ -39,9 +39,10 @@ def trainScript(en_sentences,fr_sentences, en_model,fr_model):
         else:
             X = X[:Y.shape[0]]
 
+        # print "count: ",i
         pred_vector, error = Encoder.train(X, Decoder, Y)
         loss_axis.append(error)
-        print vectorToSentence(fr_model, pred_vector), "\n----------------\n"
+        # print vectorToSentence(fr_model, pred_vector), "\n----------------\n"
 
     plot_graph(loopcount, loss_axis)
 

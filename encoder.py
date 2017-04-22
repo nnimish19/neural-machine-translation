@@ -46,7 +46,7 @@ class RNNClassifier(object):
 #           2nd row: word_vector for word 2 of same French sentence
 #           ::
 #     Output:
-#       1. predicted sentence_vector in French. List of 1D np-array (word_vector for w1, w2 ...)
+#       1. predicted sentence_vector in French.  2D np-array (word_vector for w1, w2 ...)
 #       2. Error in prediction. Numeric
 
     def train(self, X, Decoder, Y):
@@ -65,8 +65,9 @@ class RNNClassifier(object):
         output = []                              #stores output of output layer
 
         # Feed-forward--------------------------------
+        t=0
         for i in xrange(n):  # i= 0,1,2,..n-1    (w1 w2 w3)
-            t=i+1
+            t=i+1                                    # time stamp starts t=1
             Xi = np.array(X[i],ndmin=2)              # 1xd
             # yi = np.array(Y[i],ndmin=2)            # 1xk
             # print Xi,yi
@@ -77,32 +78,38 @@ class RNNClassifier(object):
             net2 = np.dot(h[t], self.W2) + self.b2   # 1xh, hxk > 1xk. Eg: [[1,2,3]]
             scores = 1/(1+np.exp(-net2))
 
-            output.append(scores[0])    #Context vector (scores[0] has one dimension because we are training 1 example "row vector"(and not matrix) at a time)
+            output.append(scores[0])                 # scores[0] has one dimension because we are training 1 example "row vector"(and not matrix) at a time
 
         ########################################################
-        # Now this output is the context vector that we'll pass to the Decoder
-        #     Get the dscore. from decoder
-        #     then compute dnet2
+        # Now this h[t] is the context vector that we'll pass to the Decoder
+        #     Get the d(ht) from decoder
+        #     then compute dnet1 to train W1
 
-        scores = np.array(output,ndmin=2)   #nxk (n: #words in X|  k: dimensions of each word in context vector)
-        pred_vector, error_in_pred, dscore = Decoder.train(scores, Y)       #predicted sentence embeddings > list
-        dscore = np.array(dscore)           #nxk (dscore[0] = derivative/gradient for ith node in output layer)
+        # scores = np.array(output,ndmin=2)   #nxk (n: #words in X|  k: dimensions of each word in context vector)
+        # pred_vector, error_in_pred, dscore = Decoder.train(scores, Y)       #predicted sentence embeddings > list
+        # dscore = np.array(dscore)           #nxk (dscore[0] = derivative/gradient for ith node in output layer)
+
+        # print "Context Vector: ", h[t], "\n"
+        pred_vector, error_in_pred, dht = Decoder.train(h[t], Y)       #predicted word vectors, error, grad_of_context_vector respectively
 
         # Backward--------------------------------
         dnet1_next_layer = np.zeros((1, self.hidden_dim))
+        t=0
         for t in xrange(n,0,-1):  # t = d,d-1,d-2,..1
             i=t-1
             Xi = np.array(X[i], ndmin=2)
             # yi = np.array(Y[i], ndmin=2)
 
-            # dscore = -(yi - scores)
-            dnet2 = dscore[i] * (scores[i] * (1 - scores[i]))   #1xk, 1xk
-            dnet2 = np.array(dnet2,ndmin=2)
+            # Remember? dscore = -(yi - scores)
+            # dnet2 = dscore[i] * (scores[i] * (1 - scores[i]))   #1xk, 1xk
+            # dnet2 = np.array(dnet2,ndmin=2)
+            dnet2 = np.zeros((1,k))
 
             dW2 += np.dot(h[t].T, dnet2)                    #accumulate     hx1,1xk > hxk
             db2 += np.sum(dnet2, axis=0, keepdims=True)     #accumulate
-            dht = np.dot(dnet2, self.W2.T) + np.dot(dnet1_next_layer, self.Wh.T)    #From_output_layer + h[t]_was_also_input_to_next_hidden_layer
-                         #1xk    (hxk).T               1xh             (h,h)
+            if t!=n:
+                dht = np.dot(dnet2, self.W2.T) + np.dot(dnet1_next_layer, self.Wh.T)    #From_output_layer + h[t]_was_also_input_to_next_hidden_layer
+                             #1xk    (hxk).T               1xh             (h,h)
 
             dnet1 = dht * (h[t] * (1-h[t]))                 # 1xh, 1xh
 

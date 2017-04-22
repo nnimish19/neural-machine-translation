@@ -14,7 +14,7 @@ class RNNClassifier(object):
         pass
 
     @run_once
-    def my_init(self,n,d,k):
+    def my_init(self,d,k):
         self.hidden_dim = 16
         self.step_size = 1
         self.reg = 0#1e-3
@@ -22,6 +22,7 @@ class RNNClassifier(object):
 
         self.W1 = self.initialize_weights(d, h)
         self.Wh = self.initialize_weights(h, h)
+        self.Wy = self.initialize_weights(k, h)
         self.b1 = np.zeros((1, h))                  # h-bias, 1 for each hidden node/classifier
 
         self.W2 = self.initialize_weights(h, k)     # h-input dimensions, k-nodes (size/dmin of word2vec of output language)
@@ -35,37 +36,44 @@ class RNNClassifier(object):
 
 
 # StochasticGradientDescent: learn the weights after each example. X contains one example
-#     Input: 1 sentence(English/French) context vector,
+#     Input: 1 sentence(English) context vector,
 #       @params:
-#       X np 2dmin array
-#           1st row: context vector for word 1 of Engligh sentence
-#           2nd row: context vector for word 2 of same English sentence
-#           ::
-#       y np 2dmin array
-#           1st row: context vector for word 1 of corresponding French sentence
-#          2nd row: context vector for word 2 of same French sentence
+#       C: np-2D array: [1xh]   where h = #hidden_layers in encoder.
+#                              As an input to decoder its just #dimension=d of input vector
+
+#       Y: np 2dmin array
+#           1st row: Actual word vector for word 1 of corresponding French sentence
+#           2nd row: Actual vector for word 2 of same French sentence
 #           ::
 #     Output:
 #       1. predicted sentence_vector in French. List of 1D np-array (word_vector for w1, w2 ...)
 #       2. Error in prediction. Numeric
 #       3. gradient on context vector (d(context_w1),d(context_w2)...). List of 1D np-array
 
-    def train(self, X, Y):
-        n, d = X.shape          # there are n words(n timestamps) having d features each. (d = size of 1 word vector in given language)
-        k = Y.shape[1]          # k = size of 1 word vector in target language. Note X = nxd, Y = nxk
+    def train(self, C, Y):
 
-        self.my_init(n,d,k)     #called just once
+        n, k = Y.shape  # k = size of 1 word vector in target language. Note X = nxd, Y = nxk
+        d = C.shape[1]  # d = size of 1 context vector
+
+        X = np.repeat(C, n, axis=0)         #for convinience: one context vector for every output word
+
+        # Now X has there are n context words(n timestamps) having d features each.
+
+
+        self.my_init(d,k)     #called just once
 
         dW2 = np.zeros_like(self.W2)
         dWh = np.zeros_like(self.Wh)
+        dWy = np.zeros_like(self.Wy)
         dW1 = np.zeros_like(self.W1)
         db2 = np.zeros_like(self.b2)
         db1 = np.zeros_like(self.b1)
 
         h = np.zeros((n+1, 1, self.hidden_dim))  #h[t] stores output hidden layer at time t(i.e., (t-1)th example). [[1,2,3...16]]
-        output = []                              #stores output of output layer
+        output = np.zeros((n + 1, k))            #stores outcome(predicted word vector) of output layer. n= number of words in Target Language
+
         total_error = 0
-        dX = []
+        dX = np.zeros_like(X)
 
         # Feed-forward--------------------------------
         for i in xrange(n):  # i= 0,1,2,..n-1    (w1 w2 w3)
@@ -74,16 +82,16 @@ class RNNClassifier(object):
             yi = np.array(Y[i],ndmin=2)              # 1xk
             # print Xi,yi
 
-            net1 = np.dot(Xi, self.W1) + np.dot(h[t-1], self.Wh) + self.b1       #h[0]=0. X[i]=1xd, W=dxh
+            net1 = np.dot(Xi, self.W1) + np.dot(h[t-1], self.Wh) + np.dot(output[t-1], self.Wy) + self.b1       #h[0]=0. X[i]=1xd, W1=dxh,
             h[t] = 1/(1+np.exp(-net1))               # 1xh
 
             net2 = np.dot(h[t], self.W2) + self.b2   # 1xh, hxk > 1xk. Eg: [[1,2,3]]
             scores = 1/(1+np.exp(-net2))
-            output.append(scores[0])
+            output[t-1] = scores[0]
 
             total_error += 0.5 * np.sum(np.square(yi - scores))
 
-        scores = np.array(output)
+        scores = np.array(output[1:])
 
         # Backward--------------------------------
         dnet1_next_layer = np.zeros((1, self.hidden_dim))
@@ -102,26 +110,29 @@ class RNNClassifier(object):
 
             dnet1 = dht * (h[t] * (1-h[t]))                 # 1xh, 1xh
             dWh += np.dot(h[t - 1].T, dnet1)                # h[0] = 0
+            dWy += np.dot(np.array(output[t - 1], ndmin=2).T, dnet1)           # output[0] = 0
             dW1 += np.dot(Xi.T, dnet1)
             db1 += np.sum(dnet1, axis=0,keepdims=True)
 
-            dX.append(np.dot(dnet1, self.W1.T)[0])          #1xh, (dxh).T > 1xd
+            dX[i] = np.dot(dnet1, self.W1.T)[0]          #1xh, (dxh).T > 1xd
             dnet1_next_layer = dnet1
 
         # regularization gradient
         dW2 += self.reg * self.W2
         dWh += self.reg * self.Wh
+        dWy += self.reg * self.Wy
         dW1 += self.reg * self.W1
 
         self.W2 += (self.step_size * (-dW2))
         self.b2 += (self.step_size * (-db2))
         self.Wh += (self.step_size * (-dWh))
+        self.Wy += (self.step_size * (-dWy))
         self.W1 += (self.step_size * (-dW1))
         self.b1 += (self.step_size * (-db1))
 
-        dX.reverse()    #reverse the order so it becomes d(w1),d(w2)...
+        dX = np.sum(dX, axis=0)  # sum across gradients. 1xh
 
-        return np.array(output), total_error, dX
+        return output[1:], total_error, dX
 
     def predict(self, X):
         n, d = X.shape  # 2x1
