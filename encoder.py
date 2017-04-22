@@ -133,20 +133,29 @@ class RNNClassifier(object):
 
         return pred_vector, error_in_pred
 
-    def predict(self, X):
-        n, d = X.shape  # 2x1
-        h = np.zeros((n+1, self.hidden_dim))  #h[t] stores output hidden layer at time t(i.e., (t-1)th example).
-        scores=[]
+    def predict(self, X, Decoder):
+        n, d = X.shape  # #words_in_english_sentence, #dim_of_word_vector
+        h = np.zeros((n + 1, 1, self.hidden_dim))  # h[t] stores output of hidden layer at time t(i.e., i-th example). [[1,2,3...16]]
+        output = []     # stores output of output layer
 
         # Feed-forward--------------------------------
-        for i in xrange(n):  # i= 0,1,2,..n-1    (word0 word1 word2)
-            t=i+1
-            net1 = np.dot(X[i], self.W1) + np.dot(h[t-1], self.Wh) +self.b1       #h[0]=0. X[i]=1xd, W=dxh
-            h[t] = 1/(1+np.exp(-net1))
+        t = 0
+        for i in xrange(n):  # i= 0,1,2,..n-1    (w1 w2 w3)
+            t = i + 1  # time stamp starts t=1
+            Xi = np.array(X[i], ndmin=2)  # 1xd
+            # yi = np.array(Y[i],ndmin=2)            # 1xk
+            # print Xi,yi
 
-            net2 = np.dot(h[t], self.W2)+self.b2
-            scores.append(1/(1+np.exp(-net2)))
+            net1 = np.dot(Xi, self.W1) + np.dot(h[t - 1], self.Wh) + self.b1  # h[0]=0. X[i]=1xd, W=dxh
+            h[t] = 1 / (1 + np.exp(-net1))  # 1xh
 
-        return np.array([scores]).T
+            net2 = np.dot(h[t], self.W2) + self.b2  # 1xh, hxk > 1xk. Eg: [[1,2,3]]
+            scores = 1 / (1 + np.exp(-net2))
+
+            output.append(scores[0])
+
+        pred_word_vectors = Decoder.predict(h[t], n)
+
+        return pred_word_vectors
 
 #End Class RNNClassifier-----------------------------------

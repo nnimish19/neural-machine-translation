@@ -16,6 +16,7 @@ class RNNClassifier(object):
     @run_once
     def my_init(self,d,k):
         self.hidden_dim = 16
+        self.output_dim = k
         self.step_size = 1
         self.reg = 0#1e-3
         h = self.hidden_dim  # size of hidden layer
@@ -91,7 +92,7 @@ class RNNClassifier(object):
 
             total_error += 0.5 * np.sum(np.square(yi - scores))
 
-        scores = np.array(output[1:])
+        scores = output[1:]
 
         # Backward--------------------------------
         dnet1_next_layer = np.zeros((1, self.hidden_dim))
@@ -134,20 +135,27 @@ class RNNClassifier(object):
 
         return output[1:], total_error, dX
 
-    def predict(self, X):
-        n, d = X.shape  # 2x1
-        h = np.zeros((n+1, self.hidden_dim))  #h[t] stores output hidden layer at time t(i.e., (t-1)th example).
-        scores=[]
+    def predict(self, C, n):                     # Context Vector 1xd, #words in english sentence
+
+        X = np.repeat(C, n, axis=0)              # for convinience: one context vector for every output word
+
+        h = np.zeros((n + 1, 1, self.hidden_dim))  #h[t] stores output hidden layer at time t(i.e., (t-1)th example). [[1,2,3...16]]
+        output = np.zeros((n + 1, self.output_dim))            #stores outcome(predicted word vector) of output layer. n= number of words in Target Language
 
         # Feed-forward--------------------------------
-        for i in xrange(n):  # i= 0,1,2,..n-1    (word0 word1 word2)
+        for i in xrange(n):  # i= 0,1,2,..n-1    (w1 w2 w3)
             t=i+1
-            net1 = np.dot(X[i], self.W1) + np.dot(h[t-1], self.Wh) +self.b1       #h[0]=0. X[i]=1xd, W=dxh
-            h[t] = 1/(1+np.exp(-net1))
+            Xi = np.array(X[i],ndmin=2)              # 1xd
+            # yi = np.array(Y[i],ndmin=2)              # 1xk
+            # print Xi,yi
 
-            net2 = np.dot(h[t], self.W2)+self.b2
-            scores.append(1/(1+np.exp(-net2)))
+            net1 = np.dot(Xi, self.W1) + np.dot(h[t-1], self.Wh) + np.dot(output[t-1], self.Wy) + self.b1       #h[0]=0. X[i]=1xd, W1=dxh,
+            h[t] = 1/(1+np.exp(-net1))               # 1xh
 
-        return np.array([scores]).T
+            net2 = np.dot(h[t], self.W2) + self.b2   # 1xh, hxk > 1xk. Eg: [[1,2,3]]
+            scores = 1/(1+np.exp(-net2))
+            output[t-1] = scores[0]
+
+        return output[1:]
 
 #End Class RNNClassifier-----------------------------------
