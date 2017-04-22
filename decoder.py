@@ -135,6 +135,14 @@ class RNNClassifier(object):
 
         return output[1:], total_error, dX
 
+    def get_weights(self):
+        return (self.W2,self.b2,self.Wh,self.Wy,self.W1,self.b1)
+
+    def set_weights(self,Decoder_weights):
+        self.W2, self.b2, self.Wh, self.Wy, self.W1, self.b1 = Decoder_weights['dW2'],Decoder_weights['db2'],Decoder_weights['dWh'],Decoder_weights['dWy'],Decoder_weights['dW1'],Decoder_weights['db1']
+        self.hidden_dim,self.output_dim = self.W2.shape
+
+
     def predict(self, C, n):                     # Context Vector 1xd, #words in english sentence
 
         X = np.repeat(C, n, axis=0)              # for convinience: one context vector for every output word

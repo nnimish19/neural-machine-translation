@@ -133,6 +133,13 @@ class RNNClassifier(object):
 
         return pred_vector, error_in_pred
 
+    def get_weights(self):
+        return (self.W2,self.b2,self.Wh,self.W1,self.b1)
+
+    def set_weights(self,Encoder_weights):
+        self.W2, self.b2, self.Wh, self.W1, self.b1 = Encoder_weights['W2'], Encoder_weights['b2'], Encoder_weights['Wh'], Encoder_weights['W1'],Encoder_weights['b1']
+        self.hidden_dim = self.W1.shape[1]
+
     def predict(self, X, Decoder):
         n, d = X.shape  # #words_in_english_sentence, #dim_of_word_vector
         h = np.zeros((n + 1, 1, self.hidden_dim))  # h[t] stores output of hidden layer at time t(i.e., i-th example). [[1,2,3...16]]
