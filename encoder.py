@@ -15,7 +15,7 @@ class RNNClassifier(object):
 
     @run_once
     def my_init(self,n,d,k):
-        self.hidden_dim = 16
+        self.hidden_dim = 64
         self.step_size = 1
         self.reg = 0#1e-3
         h = self.hidden_dim  # size of hidden layer
@@ -50,8 +50,8 @@ class RNNClassifier(object):
 #       2. Error in prediction. Numeric
 
     def train(self, X, Decoder, Y):
-        n, d = X.shape              # n = words, d = size of 1 word_embedding/vector
-        k = 10 #Y.shape[1]          # k = size of context vector for one word
+        n, d = X.shape              # n = words, d = size of 1 word_vector
+        k = 64 #Y.shape[1]          # k = output
 
         self.my_init(n,d,k)         #called just once
 
@@ -137,13 +137,13 @@ class RNNClassifier(object):
         return (self.W2,self.b2,self.Wh,self.W1,self.b1)
 
     def set_weights(self,Encoder_weights):
+        # print Encoder_weights['b1']
         self.W2, self.b2, self.Wh, self.W1, self.b1 = Encoder_weights['W2'], Encoder_weights['b2'], Encoder_weights['Wh'], Encoder_weights['W1'],Encoder_weights['b1']
         self.hidden_dim = self.W1.shape[1]
 
     def predict(self, X, Decoder):
-        n, d = X.shape  # #words_in_english_sentence, #dim_of_word_vector
+        n, d = X.shape  #words_in_english_sentence, #dim_of_word_vector
         h = np.zeros((n + 1, 1, self.hidden_dim))  # h[t] stores output of hidden layer at time t(i.e., i-th example). [[1,2,3...16]]
-        output = []     # stores output of output layer
 
         # Feed-forward--------------------------------
         t = 0
@@ -156,12 +156,7 @@ class RNNClassifier(object):
             net1 = np.dot(Xi, self.W1) + np.dot(h[t - 1], self.Wh) + self.b1  # h[0]=0. X[i]=1xd, W=dxh
             h[t] = 1 / (1 + np.exp(-net1))  # 1xh
 
-            net2 = np.dot(h[t], self.W2) + self.b2  # 1xh, hxk > 1xk. Eg: [[1,2,3]]
-            scores = 1 / (1 + np.exp(-net2))
-
-            output.append(scores[0])
-
-        pred_word_vectors = Decoder.predict(h[t], n)
+        pred_word_vectors = Decoder.predict(h[t], n)   #Context vector, n-> also equal to #words in Target language
 
         return pred_word_vectors
 

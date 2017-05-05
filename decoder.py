@@ -15,7 +15,7 @@ class RNNClassifier(object):
 
     @run_once
     def my_init(self,d,k):
-        self.hidden_dim = 16
+        self.hidden_dim = 64
         self.output_dim = k
         self.step_size = 1
         self.reg = 0#1e-3
@@ -139,7 +139,7 @@ class RNNClassifier(object):
         return (self.W2,self.b2,self.Wh,self.Wy,self.W1,self.b1)
 
     def set_weights(self,Decoder_weights):
-        self.W2, self.b2, self.Wh, self.Wy, self.W1, self.b1 = Decoder_weights['dW2'],Decoder_weights['db2'],Decoder_weights['dWh'],Decoder_weights['dWy'],Decoder_weights['dW1'],Decoder_weights['db1']
+        self.W2, self.b2, self.Wh, self.Wy, self.W1, self.b1 = Decoder_weights['W2'],Decoder_weights['b2'],Decoder_weights['Wh'],Decoder_weights['Wy'],Decoder_weights['W1'],Decoder_weights['b1']
         self.hidden_dim,self.output_dim = self.W2.shape
 
 
@@ -147,13 +147,13 @@ class RNNClassifier(object):
 
         X = np.repeat(C, n, axis=0)              # for convinience: one context vector for every output word
 
-        h = np.zeros((n + 1, 1, self.hidden_dim))  #h[t] stores output hidden layer at time t(i.e., (t-1)th example). [[1,2,3...16]]
-        output = np.zeros((n + 1, self.output_dim))            #stores outcome(predicted word vector) of output layer. n= number of words in Target Language
+        h = np.zeros((n + 1, 1, self.hidden_dim))       #h[t] stores output hidden layer at time t(i.e., (t-1)th example). [[1,2,3...16]]
+        output = np.zeros((n + 1, self.output_dim))     #stores outcome(predicted word vector) of output layer. n= number of words in Target Language
 
         # Feed-forward--------------------------------
         for i in xrange(n):  # i= 0,1,2,..n-1    (w1 w2 w3)
             t=i+1
-            Xi = np.array(X[i],ndmin=2)              # 1xd
+            Xi = np.array(X[i],ndmin=2)                # 1xd
             # yi = np.array(Y[i],ndmin=2)              # 1xk
             # print Xi,yi
 
