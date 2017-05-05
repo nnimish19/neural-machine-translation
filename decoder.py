@@ -88,7 +88,7 @@ class RNNClassifier(object):
 
             net2 = np.dot(h[t], self.W2) + self.b2   # 1xh, hxk > 1xk. Eg: [[1,2,3]]
             scores = 1/(1+np.exp(-net2))
-            output[t-1] = scores[0]
+            output[t] = scores[0]
 
             total_error += 0.5 * np.sum(np.square(yi - scores))
 
@@ -162,7 +162,7 @@ class RNNClassifier(object):
 
             net2 = np.dot(h[t], self.W2) + self.b2   # 1xh, hxk > 1xk. Eg: [[1,2,3]]
             scores = 1/(1+np.exp(-net2))
-            output[t-1] = scores[0]
+            output[t] = scores[0]
 
         return output[1:]
 
