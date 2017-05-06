@@ -57,9 +57,9 @@ def trainScript(en_sentences, fr_sentences, en_model, fr_model):
             pred_vector, error = Encoder.train(X, Decoder, Y)
             epoch_loss.append(error)
             # print vectorToSentence(fr_model, pred_vector), "\n----------------\n"
-            if(i%1000==0):
+            if(i%2000==0):
                 saveWeights()
-                print epoch, i
+                # print epoch, i
         loss_axis.append(np.mean(np.square(epoch_loss)))
         epoch_loss = []
         print loss_axis[-1]
@@ -91,12 +91,12 @@ def prepare_model(en_sentences=[],fr_sentences=[]):
     # size: Denotes the number of dimensions present in the vector form. For sizeable blocks, people use 100-200. We can use around 50 for the Wikipedia articles.
     # window: Only terms hat occur within a window-neighbourhood of a term, in a sentence, are associated with it during training.
     # mincount: terms that occur less than min_count number of times are ignored in the calculations.
-    # sg: This defines the algorithm. If equal to 1, the skip-gram technique is used. Else, the CBoW method is employed.
+    # sg: This defines the algorithm. If equal to 1, the skip-gram technique is used. Else(=0), the CBoW method is employed. By default its 0.
     # workers: to controll parallization. default = 1 = no parallelization
 
     # my_model = w2v([["line","one"], ["This", "is", "line", "two"]], size=2, window=2, min_count=1, workers=1)
-    en_model = w2v(en_sentences, size=50, window=4, min_count=1, workers=4)
-    fr_model = w2v(fr_sentences, size=50, window=4, min_count=1, workers=4)
+    en_model = w2v(en_sentences, size=50, window=4, min_count=1, workers=4, sg=1)
+    fr_model = w2v(fr_sentences, size=50, window=4, min_count=1, workers=4, sg=1)
     en_model.save("models/en_mod")
     fr_model.save("models/fr_mod")
     return en_model,fr_model
@@ -111,13 +111,13 @@ def load_model():
     # print en_model.wv.most_similar(positive=[en_model.wv["man"]], topn=5)
     # print en_model.wv.most_similar(positive=[en_model.wv["voting"]], topn=5)
 
-    print fr_model.wv["(V)."]
-    print fr_model.wv.most_similar(positive=[fr_model.wv["(V)."]], topn=5)
-    print fr_model.wv.most_similar(positive=[fr_model.wv["mesurable"]], topn=5)
-    print fr_model.wv.most_similar(positive=[fr_model.wv["legislation"]], topn=5)
-    print fr_model.wv.most_similar(positive=[fr_model.wv["ivre"]], topn=5)
-    print fr_model.wv.most_similar(positive=[fr_model.wv["homme"]], topn=5)
-    print fr_model.wv.most_similar(positive=[fr_model.wv["vote"]], topn=5)
+    # print fr_model.wv["(V)."]
+    # print fr_model.wv.most_similar(positive=[fr_model.wv["(V)."]], topn=5)
+    # print fr_model.wv.most_similar(positive=[fr_model.wv["mesurable"]], topn=5)
+    # print fr_model.wv.most_similar(positive=[fr_model.wv["legislation"]], topn=5)
+    # print fr_model.wv.most_similar(positive=[fr_model.wv["ivre"]], topn=5)
+    # print fr_model.wv.most_similar(positive=[fr_model.wv["homme"]], topn=5)
+    # print fr_model.wv.most_similar(positive=[fr_model.wv["vote"]], topn=5)
     return en_model,fr_model
 
 def main():

@@ -16,14 +16,13 @@ class RNNClassifier(object):
     @run_once
     def my_init(self,n,d,k):
         self.hidden_dim = 64
-        self.step_size = 1
+        self.step_size = 0.95
         self.reg = 0#1e-3
         h = self.hidden_dim  # size of hidden layer
 
         self.W1 = self.initialize_weights(d, h)
         self.Wh = self.initialize_weights(h, h)
         self.b1 = np.zeros((1, h))                  # h-bias, 1 for each hidden node/classifier
-
         self.W2 = self.initialize_weights(h, k)     # h-input dimensions, k-nodes (size/dmin of word2vec of output language)
         self.b2 = np.zeros((1, k))                  # k-bias, 1 for each output layer node
 
@@ -156,7 +155,7 @@ class RNNClassifier(object):
             net1 = np.dot(Xi, self.W1) + np.dot(h[t - 1], self.Wh) + self.b1  # h[0]=0. X[i]=1xd, W=dxh
             h[t] = 1 / (1 + np.exp(-net1))  # 1xh
 
-        pred_word_vectors = Decoder.predict(h[t], n)   #Context vector, n-> also equal to #words in Target language
+        pred_word_vectors = Decoder.predict(h[t], n)   #h[t]: context_vector, n: also equal to #words in Target language
 
         return pred_word_vectors
 

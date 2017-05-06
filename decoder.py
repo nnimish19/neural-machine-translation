@@ -17,7 +17,7 @@ class RNNClassifier(object):
     def my_init(self,d,k):
         self.hidden_dim = 64
         self.output_dim = k
-        self.step_size = 1
+        self.step_size = 0.95
         self.reg = 0#1e-3
         h = self.hidden_dim  # size of hidden layer
 
