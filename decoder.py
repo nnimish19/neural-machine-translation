@@ -76,7 +76,7 @@ class RNNClassifier(object):
         total_error = 0
         dX = np.zeros_like(X)
 
-        # Feed-forward--------------------------------
+        # 1. Forward pass: compute output--------------------------------
         for i in xrange(n):  # i= 0,1,2,..n-1    (w1 w2 w3)
             t=i+1
             Xi = np.array(X[i],ndmin=2)              # 1xd
@@ -94,7 +94,7 @@ class RNNClassifier(object):
 
         scores = output[1:]
 
-        # Backward--------------------------------
+        # 2. Backward pass: compute gradients--------------------------------
         dnet1_next_layer = np.zeros((1, self.hidden_dim))
         for t in xrange(n,0,-1):  # t = d,d-1,d-2,..1
             i=t-1
@@ -124,6 +124,7 @@ class RNNClassifier(object):
         dWy += self.reg * self.Wy
         dW1 += self.reg * self.W1
 
+        # 3. Perform parameter update --------------------------------
         self.W2 += (self.step_size * (-dW2))
         self.b2 += (self.step_size * (-db2))
         self.Wh += (self.step_size * (-dWh))

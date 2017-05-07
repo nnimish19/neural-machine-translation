@@ -63,7 +63,7 @@ class RNNClassifier(object):
         h = np.zeros((n+1, 1, self.hidden_dim))  #h[t] stores output of hidden layer at time t(i.e., i-th example). [[1,2,3...16]]
         output = []                              #stores output of output layer
 
-        # Feed-forward--------------------------------
+        # 1. Forward pass: compute output--------------------------------
         t=0
         for i in xrange(n):  # i= 0,1,2,..n-1    (w1 w2 w3)
             t=i+1                                    # time stamp starts t=1
@@ -91,7 +91,7 @@ class RNNClassifier(object):
         # print "Context Vector: ", h[t], "\n"
         pred_vector, error_in_pred, dht = Decoder.train(h[t], Y)       #predicted word vectors, error, grad_of_context_vector respectively
 
-        # Backward--------------------------------
+        # 2. Backward pass: compute gradients--------------------------------
         dnet1_next_layer = np.zeros((1, self.hidden_dim))
         t=0
         for t in xrange(n,0,-1):  # t = d,d-1,d-2,..1
@@ -124,6 +124,7 @@ class RNNClassifier(object):
         dWh += self.reg * self.Wh
         dW1 += self.reg * self.W1
 
+        # 3. Perform parameter update --------------------------------
         self.W2 += (self.step_size * (-dW2))
         self.b2 += (self.step_size * (-db2))
         self.Wh += (self.step_size * (-dWh))
